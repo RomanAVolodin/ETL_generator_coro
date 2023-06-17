@@ -1,0 +1,29 @@
+version: "3.9"
+
+x-app: &app
+  env_file:
+    - ./.env
+  restart: always
+
+x-default-logging: &default-logging
+  options:
+    max-size: '10m'
+    max-file: '3'
+  driver: json-file
+
+services:
+  source-db:
+    image: postgres:14
+    <<: *app
+    logging: *default-logging
+    ports:
+      - "54321:5432"
+    environment:
+      TZ: "Europe/Moscow"
+      PGTZ: "Europe/Moscow"
+    volumes:
+      - source_db_data:/var/lib/postgresql/data/
+      - ./init_scripts/init_source_db.sql:/docker-entrypoint-initdb.d/init.sql
+
+volumes:
+  source_db_data:
