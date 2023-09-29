@@ -51,7 +51,7 @@ def save_movies(state: State) -> Generator[list[Movie], None, None]:
 
 
 if __name__ == '__main__':
-    # fill_source_database(100)
+    fill_source_database(100)
 
     state = State(JsonFileStorage(logger=logger))
 
