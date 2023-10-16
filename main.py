@@ -20,7 +20,7 @@ STATE_KEY = 'last_movies_updated'
 
 
 @coroutine
-def fetch_changed_movies(cursor, next_node: Generator) -> Generator[datetime, None, None]:
+def fetch_changed_movies(cursor, next_node: Generator) -> Generator[None, datetime, None]:
     while last_updated := (yield):
         logger.info(f'Fetching movies changed after ' f'{last_updated}')
         sql = 'SELECT * FROM movies WHERE updated_at > %s order by updated_at asc'
@@ -31,7 +31,7 @@ def fetch_changed_movies(cursor, next_node: Generator) -> Generator[datetime, No
 
 
 @coroutine
-def transform_movies(next_node: Generator) -> Generator[list[dict], None, None]:
+def transform_movies(next_node: Generator) -> Generator[None, list[dict], None]:
     while movie_dicts := (yield):
         batch = []
         for movie_dict in movie_dicts:
@@ -43,7 +43,7 @@ def transform_movies(next_node: Generator) -> Generator[list[dict], None, None]:
 
 
 @coroutine
-def save_movies(state: State) -> Generator[list[Movie], None, None]:
+def save_movies(state: State) -> Generator[None, list[Movie], None]:
     while movies := (yield):
         logger.info(f'Received for saving {len(movies)} movies')
         print([movie.json() for movie in movies])
@@ -59,9 +59,6 @@ if __name__ == '__main__':
     print(dsn)
 
     with psycopg.connect(dsn, row_factory=dict_row) as conn, ServerCursor(conn, 'fetcher') as cur:
-        # Closing a server-side cursor is more important than closing a client-side one
-        # because it also releases the resources on the server, which otherwise might remain allocated
-        # until the end of the session (memory, locks). Using the pattern: with conn.cursor():
         saver_coro = save_movies(state)
         transformer_coro = transform_movies(next_node=saver_coro)
         fetcher_coro = fetch_changed_movies(cur, transformer_coro)
