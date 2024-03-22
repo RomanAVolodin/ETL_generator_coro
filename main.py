@@ -22,7 +22,7 @@ STATE_KEY = 'last_movies_updated'
 @coroutine
 def fetch_changed_movies(cursor, next_node: Generator) -> Generator[None, datetime, None]:
     while last_updated := (yield):
-        logger.info(f'Fetching movies changed after ' f'{last_updated}')
+        logger.info(f'Fetching movies changed after %s', last_updated)
         sql = 'SELECT * FROM movies WHERE updated_at > %s order by updated_at asc'
         logger.info('Fetching movies updated after %s', last_updated)
         cursor.execute(sql, (last_updated,))
@@ -45,13 +45,13 @@ def transform_movies(next_node: Generator) -> Generator[None, list[dict], None]:
 @coroutine
 def save_movies(state: State) -> Generator[None, list[Movie], None]:
     while movies := (yield):
-        logger.info(f'Received for saving {len(movies)} movies')
+        logger.info('Received for saving %s movies', len(movies))
         print([movie.json() for movie in movies])
         state.set_state(STATE_KEY, str(movies[-1].updated_at))
 
 
 if __name__ == '__main__':
-    fill_source_database(100)
+    fill_source_database(1000)
 
     state = State(JsonFileStorage(logger=logger))
 
